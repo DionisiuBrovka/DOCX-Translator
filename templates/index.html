@@ -106,7 +106,8 @@
 
         input[type="text"],
         input[type="password"],
-        select {
+        select,
+        textarea {
             width: 100%;
             padding: 0.65rem 0.85rem;
             background: var(--surface-2);
@@ -119,7 +120,13 @@
             transition: border-color 0.2s;
         }
 
-        input:focus, select:focus {
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+            line-height: 1.4;
+        }
+
+        input:focus, select:focus, textarea:focus {
             border-color: var(--accent);
             box-shadow: 0 0 0 3px var(--accent-glow);
         }
@@ -435,6 +442,10 @@
                             <label>Целевой язык</label>
                             <input type="text" name="target_lang" value="English">
                         </div>
+                    </div>
+                    <div class="field">
+                        <label>Глоссарий <span class="hint">(опционально, формат JSON)</span></label>
+                        <textarea name="glossary" id="glossaryInput" placeholder='{"машинное обучение": "machine learning", "нейронная сеть": "neural network"}'></textarea>
                     </div>
                 </div>
             </div>
