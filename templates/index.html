@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DOCX Translator</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0c0c0f;
+            --surface: #16161a;
+            --surface-2: #1e1e24;
+            --border: #2a2a32;
+            --border-hover: #3a3a45;
+            --text: #e8e6e3;
+            --text-dim: #8b8a88;
+            --accent: #6ee7b7;
+            --accent-dim: #34d399;
+            --accent-glow: rgba(110, 231, 183, 0.12);
+            --error: #f87171;
+            --error-bg: rgba(248, 113, 113, 0.08);
+            --radius: 12px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 640px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            margin-bottom: 0.5rem;
+        }
+
+        .header h1 span {
+            color: var(--accent);
+        }
+
+        .header p {
+            color: var(--text-dim);
+            font-size: 0.95rem;
+            font-weight: 300;
+        }
+
+        /* Card */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.75rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .card-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-dim);
+            margin-bottom: 1rem;
+        }
+
+        /* Form Elements */
+        .field {
+            margin-bottom: 1rem;
+        }
+
+        .field:last-child {
+            margin-bottom: 0;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-bottom: 0.4rem;
+            color: var(--text);
+        }
+
+        label .hint {
+            font-weight: 300;
+            color: var(--text-dim);
+            font-size: 0.8rem;
+        }
+
+        input[type="text"],
+        input[type="password"],
+        select {
+            width: 100%;
+            padding: 0.65rem 0.85rem;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+
+        /* Upload Zone */
+        .upload-zone {
+            border: 2px dashed var(--border);
+            border-radius: var(--radius);
+            padding: 2.5rem 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.25s;
+            position: relative;
+        }
+
+        .upload-zone:hover,
+        .upload-zone.dragover {
+            border-color: var(--accent);
+            background: var(--accent-glow);
+        }
+
+        .upload-zone.has-file {
+            border-color: var(--accent-dim);
+            border-style: solid;
+            background: var(--accent-glow);
+        }
+
+        .upload-zone input[type="file"] {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .upload-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .upload-text {
+            font-size: 0.95rem;
+            color: var(--text-dim);
+        }
+
+        .upload-text strong {
+            color: var(--accent);
+            font-weight: 500;
+        }
+
+        .file-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--accent);
+            margin-top: 0.5rem;
+            word-break: break-all;
+        }
+
+        /* Button */
+        .btn {
+            width: 100%;
+            padding: 0.85rem;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: var(--bg);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: var(--accent-dim);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 20px var(--accent-glow);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .btn-download {
+            background: transparent;
+            border: 2px solid var(--accent);
+            color: var(--accent);
+            margin-top: 0.75rem;
+            text-decoration: none;
+            display: block;
+            text-align: center;
+        }
+
+        .btn-download:hover {
+            background: var(--accent-glow);
+        }
+
+        /* Progress */
+        .progress-section {
+            display: none;
+        }
+
+        .progress-section.active {
+            display: block;
+        }
+
+        .progress-bar-track {
+            width: 100%;
+            height: 6px;
+            background: var(--surface-2);
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-dim), var(--accent));
+            border-radius: 3px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .progress-status {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            text-align: center;
+        }
+
+        .progress-status .pct {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        /* Result */
+        .result-section {
+            display: none;
+        }
+
+        .result-section.active {
+            display: block;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+            margin-top: 0.75rem;
+        }
+
+        .stat {
+            background: var(--surface-2);
+            border-radius: 8px;
+            padding: 0.75rem;
+        }
+
+        .stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            margin-top: 0.15rem;
+        }
+
+        /* Error */
+        .error-box {
+            display: none;
+            background: var(--error-bg);
+            border: 1px solid var(--error);
+            border-radius: 8px;
+            padding: 0.85rem 1rem;
+            color: var(--error);
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+        }
+
+        .error-box.active {
+            display: block;
+        }
+
+        /* Collapsible settings */
+        .settings-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            user-select: none;
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+            transition: color 0.2s;
+        }
+
+        .settings-toggle:hover {
+            color: var(--text);
+        }
+
+        .settings-toggle .arrow {
+            transition: transform 0.2s;
+            font-size: 0.7rem;
+        }
+
+        .settings-toggle.open .arrow {
+            transform: rotate(90deg);
+        }
+
+        .settings-body {
+            display: none;
+        }
+
+        .settings-body.open {
+            display: block;
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 2rem;
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 0.8rem;
+        }
+
+        .footer code {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent);
+            font-size: 0.78rem;
+        }
+
+        /* Spinner */
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--accent-glow);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            vertical-align: middle;
+            margin-right: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📄 DOCX <span>Translator</span></h1>
+            <p>Перевод документов Word с сохранением форматирования</p>
+        </div>
+
+        <!-- Error -->
+        <div class="error-box" id="errorBox"></div>
+
+        <!-- Upload Form -->
+        <form id="uploadForm">
+            <div class="card">
+                <div class="card-title">Документ</div>
+                <div class="upload-zone" id="uploadZone">
+                    <input type="file" name="file" id="fileInput" accept=".docx">
+                    <div class="upload-icon">📎</div>
+                    <div class="upload-text" id="uploadText">
+                        Перетащите <strong>.docx</strong> файл или кликните для выбора
+                    </div>
+                    <div class="file-name" id="fileName"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">API</div>
+                <div class="field">
+                    <label>Groq API Key</label>
+                    <input type="password" name="api_key" id="apiKey"
+                           placeholder="gsk_..." autocomplete="off">
+                </div>
+
+                <div class="settings-toggle" id="settingsToggle">
+                    <span class="arrow">▶</span> Дополнительные настройки
+                </div>
+                <div class="settings-body" id="settingsBody">
+                    <div class="field">
+                        <label>Модель <span class="hint">(по умолч. {{ groq_model }})</span></label>
+                        <select name="model" id="modelSelect">
+                            <option value="llama-3.3-70b-versatile">Llama 3.3 70B (рекомендуется)</option>
+                            <option value="llama-3.1-8b-instant">Llama 3.1 8B (быстрый)</option>
+                            <option value="gemma2-9b-it">Gemma 2 9B</option>
+                            <option value="mixtral-8x7b-32768">Mixtral 8x7B</option>
+                            <option value="deepseek-r1-distill-llama-70b">DeepSeek R1 70B</option>
+                        </select>
+                    </div>
+                    <div class="row">
+                        <div class="field">
+                            <label>Исходный язык</label>
+                            <input type="text" name="source_lang" value="Russian">
+                        </div>
+                        <div class="field">
+                            <label>Целевой язык</label>
+                            <input type="text" name="target_lang" value="English">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" id="submitBtn" disabled>
+                Перевести документ
+            </button>
+        </form>
+
+        <!-- Progress -->
+        <div class="progress-section" id="progressSection">
+            <div class="card">
+                <div class="card-title">Перевод</div>
+                <div class="progress-status">
+                    <span class="spinner"></span>
+                    Идёт перевод... <span class="pct" id="progressPct">0%</span>
+                </div>
+                <div class="progress-bar-track">
+                    <div class="progress-bar-fill" id="progressBar"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Result -->
+        <div class="result-section" id="resultSection">
+            <div class="card">
+                <div class="card-title">Готово ✓</div>
+                <div class="stats-grid" id="statsGrid"></div>
+                <a class="btn btn-download" id="downloadBtn" href="#">
+                    ⬇ Скачать переведённый документ
+                </a>
+            </div>
+        </div>
+
+        <div class="footer">
+            Powered by <code>Groq</code> + <code>python-docx</code>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('uploadForm');
+        const fileInput = document.getElementById('fileInput');
+        const uploadZone = document.getElementById('uploadZone');
+        const uploadText = document.getElementById('uploadText');
+        const fileNameEl = document.getElementById('fileName');
+        const submitBtn = document.getElementById('submitBtn');
+        const errorBox = document.getElementById('errorBox');
+        const progressSection = document.getElementById('progressSection');
+        const progressBar = document.getElementById('progressBar');
+        const progressPct = document.getElementById('progressPct');
+        const resultSection = document.getElementById('resultSection');
+        const statsGrid = document.getElementById('statsGrid');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const settingsToggle = document.getElementById('settingsToggle');
+        const settingsBody = document.getElementById('settingsBody');
+
+        // API key persistence
+        const savedKey = localStorage.getItem('groq_api_key');
+        if (savedKey) document.getElementById('apiKey').value = savedKey;
+
+        // Settings toggle
+        settingsToggle.addEventListener('click', () => {
+            settingsToggle.classList.toggle('open');
+            settingsBody.classList.toggle('open');
+        });
+
+        // File input
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+                const name = fileInput.files[0].name;
+                fileNameEl.textContent = name;
+                uploadZone.classList.add('has-file');
+                uploadText.innerHTML = 'Файл выбран:';
+                submitBtn.disabled = false;
+            }
+        });
+
+        // Drag and drop
+        ['dragover', 'dragenter'].forEach(evt => {
+            uploadZone.addEventListener(evt, e => {
+                e.preventDefault();
+                uploadZone.classList.add('dragover');
+            });
+        });
+        ['dragleave', 'drop'].forEach(evt => {
+            uploadZone.addEventListener(evt, e => {
+                e.preventDefault();
+                uploadZone.classList.remove('dragover');
+            });
+        });
+        uploadZone.addEventListener('drop', e => {
+            if (e.dataTransfer.files.length > 0) {
+                fileInput.files = e.dataTransfer.files;
+                fileInput.dispatchEvent(new Event('change'));
+            }
+        });
+
+        function showError(msg) {
+            errorBox.textContent = msg;
+            errorBox.classList.add('active');
+        }
+
+        function clearError() {
+            errorBox.classList.remove('active');
+        }
+
+        // Submit
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            clearError();
+
+            const apiKey = document.getElementById('apiKey').value.trim();
+            if (!apiKey) { showError('Введите Groq API ключ'); return; }
+
+            // Save key
+            localStorage.setItem('groq_api_key', apiKey);
+
+            const formData = new FormData(form);
+
+            // UI state
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Отправка...';
+            progressSection.classList.add('active');
+            resultSection.classList.remove('active');
+            progressBar.style.width = '0%';
+            progressPct.textContent = '0%';
+
+            try {
+                const resp = await fetch('/translate', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                const data = await resp.json();
+
+                if (!resp.ok) {
+                    throw new Error(data.error || 'Unknown error');
+                }
+
+                // Done
+                progressBar.style.width = '100%';
+                progressPct.textContent = '100%';
+
+                setTimeout(() => {
+                    progressSection.classList.remove('active');
+                    resultSection.classList.add('active');
+
+                    // Stats
+                    const stats = data.stats || {};
+                    statsGrid.innerHTML = `
+                        <div class="stat">
+                            <div class="stat-value">${stats.paragraphs || 0}</div>
+                            <div class="stat-label">Параграфов</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">${stats.table_cells || 0}</div>
+                            <div class="stat-label">Ячеек таблиц</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">${stats.api_requests || 0}</div>
+                            <div class="stat-label">API запросов</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">${(stats.total_tokens || 0).toLocaleString()}</div>
+                            <div class="stat-label">Токенов</div>
+                        </div>
+                    `;
+
+                    downloadBtn.href = data.download_url;
+                }, 500);
+
+            } catch (err) {
+                progressSection.classList.remove('active');
+                showError(err.message);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Перевести документ';
+            }
+        });
+    </script>
+</body>
+</html>
