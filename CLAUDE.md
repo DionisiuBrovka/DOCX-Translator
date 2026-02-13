@@ -15,7 +15,11 @@ DOCX Translator is a Python/Flask web application that translates Word documents
 ## Project Structure
 
 ```
-├── app.py                 # Entire backend: TranslationEngine, DocxTranslator, Flask routes
+├── app.py                 # Entry point: creates Flask app, registers routes, starts server
+├── config.py              # Configuration: env variables, paths, logging setup
+├── translation_engine.py  # TranslationEngine — Groq API communication & run-level translation
+├── docx_translator.py     # DocxTranslator — .docx traversal (paragraphs, tables, headers/footers)
+├── routes.py              # Flask routes: upload, translate, progress, download
 ├── templates/
 │   └── index.html         # Complete frontend (HTML + CSS + JS, dark theme)
 ├── requirements.txt       # 3 dependencies: flask, python-docx, groq
@@ -27,24 +31,34 @@ DOCX Translator is a Python/Flask web application that translates Word documents
 
 ## Architecture
 
-All backend logic lives in `app.py` (~450 lines), organized into three sections:
+Backend is split into four modules with clear responsibilities:
 
-1. **`TranslationEngine`** (lines 42–180) — Handles Groq API communication
+1. **`config.py`** — All configuration in one place
+   - Environment variables (API key, model, port, debug mode, secret key)
+   - Directory paths (`uploads/`, `outputs/`)
+   - Logging setup
+
+2. **`translation_engine.py`** — `TranslationEngine` class: Groq API communication
    - `translate_runs()`: Entry point; dispatches to simple or structured translation
    - `_translate_simple()`: Single text fragment translation with whitespace preservation
    - `_translate_structured()`: Multi-fragment JSON array translation to maintain formatting boundaries
    - Fallback: if JSON parsing fails, translates full paragraph as one block
 
-2. **`DocxTranslator`** (lines 187–316) — Traverses .docx structure
+3. **`docx_translator.py`** — `DocxTranslator` class: traverses .docx structure
    - Processes body paragraphs, tables (including nested), headers, and footers
    - Skips non-Cyrillic text (detects via Unicode range `\u0400`–`\u04FF`)
    - Tracks progress via callback for real-time UI updates
 
-3. **Flask routes** (lines 322–442):
+4. **`routes.py`** — Flask routes registered via `register_routes(app)`:
    - `GET /` — Serves the web UI
    - `POST /translate` — Upload and translate a document (synchronous)
    - `GET /progress/<task_id>` — Poll translation progress
    - `GET /download/<task_id>` — Download translated document
+
+5. **`app.py`** — Thin entry point:
+   - Creates Flask instance, sets secret key
+   - Calls `register_routes(app)` from `routes.py`
+   - Runs the server via `app.run()`
 
 ## Setup & Running
 
@@ -88,9 +102,11 @@ When adding tests:
 
 ## Common Tasks
 
-**Adding a new route**: Add to the Flask routes section at the bottom of `app.py` (after line 316).
+**Adding a new route**: Add a new `@app.route` inside `register_routes()` in `routes.py`.
 
-**Changing translation behavior**: Modify `TranslationEngine` methods. The system prompts for the LLM are inline in `_translate_simple()` and `_translate_structured()`.
+**Changing translation behavior**: Modify `TranslationEngine` methods in `translation_engine.py`. The system prompts for the LLM are inline in `_translate_simple()` and `_translate_structured()`.
+
+**Changing configuration**: Edit `config.py` — all env variables and paths are defined there.
 
 **Modifying the UI**: Edit `templates/index.html` — all styles, markup, and JavaScript are in this single file.
 
@@ -100,7 +116,7 @@ When adding tests:
 
 - Comments and docstrings are in Russian (project originated in Russian-speaking context)
 - Type hints are used sparingly (e.g., `list[str]`, `Optional`)
-- Logging via Python's `logging` module (`logger = logging.getLogger(__name__)`)
+- Logging via Python's `logging` module (`logger = logging.getLogger("docx_translator")`)
 - Paths use `pathlib.Path` rather than string manipulation
 - No linter or formatter is configured — follow existing style (PEP 8 general adherence)
 
