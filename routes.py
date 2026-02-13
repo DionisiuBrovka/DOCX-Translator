@@ -14,6 +14,7 @@ Flask-маршруты (API endpoints) для DOCX Translator.
 """
 
 import uuid
+import json
 import logging
 from pathlib import Path
 
@@ -85,6 +86,17 @@ def register_routes(app):
         source_lang = request.form.get("source_lang", "Russian").strip()
         target_lang = request.form.get("target_lang", "English").strip()
 
+        # --- Глоссарий (опциональный) ---
+        glossary = {}
+        glossary_text = request.form.get("glossary", "").strip()
+        if glossary_text:
+            try:
+                glossary = json.loads(glossary_text)
+                if not isinstance(glossary, dict):
+                    return jsonify({"error": "Glossary must be a JSON object"}), 400
+            except json.JSONDecodeError as e:
+                return jsonify({"error": f"Invalid glossary JSON: {str(e)}"}), 400
+
         # --- Сохранение загруженного файла ---
         task_id = str(uuid.uuid4())[:8]
         original_name = Path(file.filename).stem
@@ -111,6 +123,7 @@ def register_routes(app):
                 model=model,
                 source_lang=source_lang,
                 target_lang=target_lang,
+                glossary=glossary,
             )
             translator = DocxTranslator(engine)
 

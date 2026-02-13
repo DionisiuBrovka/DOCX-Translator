@@ -31,7 +31,8 @@ class TranslationEngine:
     """Переводчик текста через Groq API с сохранением структуры ранов."""
 
     def __init__(self, api_key: str, model: str = GROQ_MODEL,
-                 source_lang: str = "Russian", target_lang: str = "English"):
+                 source_lang: str = "Russian", target_lang: str = "English",
+                 glossary: dict[str, str] = None):
         """
         Инициализация движка перевода.
 
@@ -40,15 +41,39 @@ class TranslationEngine:
             model: Идентификатор LLM-модели (по умолчанию из конфига).
             source_lang: Язык оригинала (для системного промпта LLM).
             target_lang: Целевой язык перевода.
+            glossary: Словарь терминов {исходный_термин: перевод}.
+                      При переводе эти термины должны переводиться точно как указано.
         """
         self.client = Groq(api_key=api_key)
         self.model = model
         self.source_lang = source_lang
         self.target_lang = target_lang
+        self.glossary = glossary or {}
 
         # Счётчики для статистики: сколько запросов отправлено и токенов потрачено
         self.request_count = 0
         self.total_tokens = 0
+
+    # -----------------------------------------------------------------
+    # Вспомогательные методы
+    # -----------------------------------------------------------------
+
+    def _format_glossary_instructions(self) -> str:
+        """
+        Форматирует глоссарий в строку инструкций для системного промпта.
+
+        Returns:
+            Строка с инструкциями по использованию глоссария, или пустая строка
+            если глоссарий не задан.
+        """
+        if not self.glossary:
+            return ""
+
+        lines = ["\n\nGLOSSARY - Use these EXACT translations for the following terms:"]
+        for source_term, target_term in self.glossary.items():
+            lines.append(f'- "{source_term}" → "{target_term}"')
+
+        return "\n".join(lines)
 
     # -----------------------------------------------------------------
     # Публичный метод — точка входа
@@ -100,6 +125,8 @@ class TranslationEngine:
         leading = text[:len(text) - len(text.lstrip())]
         trailing = text[len(text.rstrip()):]
 
+        glossary_instructions = self._format_glossary_instructions()
+
         response = self.client.chat.completions.create(
             model=self.model,
             messages=[
@@ -111,6 +138,7 @@ class TranslationEngine:
                         f"and naturally. Return ONLY the translated text, nothing else. "
                         f"Do not add explanations, notes, or quotes around the text. "
                         f"Preserve any leading/trailing whitespace exactly."
+                        f"{glossary_instructions}"
                     )
                 },
                 {"role": "user", "content": text.strip()}
@@ -158,6 +186,8 @@ class TranslationEngine:
         fragments = [t for _, t in non_empty]
         fragments_json = json.dumps(fragments, ensure_ascii=False)
 
+        glossary_instructions = self._format_glossary_instructions()
+
         response = self.client.chat.completions.create(
             model=self.model,
             messages=[
@@ -178,6 +208,7 @@ class TranslationEngine:
                         f"{self.target_lang}\n"
                         f"5. Return ONLY the JSON array, no explanation or markdown\n"
                         f"6. If a fragment is just whitespace or punctuation, keep it as-is"
+                        f"{glossary_instructions}"
                     )
                 },
                 {"role": "user", "content": fragments_json}
